@@ -1,0 +1,28 @@
+syntax = "proto3";
+option go_package = "./symmetricKeyEnc";
+//option java_multiple_files = false;
+//option java_package = "symmetricKeyEnc.proto";
+//option java_outer_classname = "symmetricKeyEnc";
+package symmetricKeyEnc;
+
+// 定义请求参数  -对称密钥明文
+message Request {
+  string symmetricKey = 1;
+}
+
+// 定义返回参数  -对称密钥密文
+message Response {
+  string C1 = 1;
+  string C2 = 2;
+  string C3 = 3;
+  string C4 = 4;
+  string C5 = 5;
+
+}
+
+// 定义远程调用方法  --对称密钥加密
+service symmetricKeyEncServer {
+  rpc  SymmetricKeyEnc(Request) returns (Response) {}
+}
+// protoc --go-grpc_out=. message.proto
+// protoc --go_out=. *.proto
