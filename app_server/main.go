@@ -22,15 +22,17 @@ func main() {
 	service.InitService(sdk2.Info.ChaincodeID, sdk2.Info.ChannelID, sdk2.Info.Orgs[0], sdk)
 
 	// Register
-	router.POST("/register", v1.RegisterHandler)
+	router.POST("/register", v1.RegisterHandle)
 	// login
 	router.POST("/login", v1.Login)
 	// aes crypto file
 	router.POST("/aes", v1.AesHandler)
 	// IPFS get store file info
 	router.GET("/findAesFile", v1.GetFileInfo)
-	//  metadata and Cm store to blockchain
+	// metadata and Cm store to blockchain
 	router.POST("/storeMetadata", v1.MetadataAndCm)
+	// DU interest keyword search Info
+	router.GET("/interestKeyword", v1.InterestKeywordHandle)
 	err = router.Run(":9001")
 	if err != nil {
 		logrus.Fatalf("run server failed,err:%v\n", err)

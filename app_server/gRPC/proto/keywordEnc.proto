@@ -1,0 +1,23 @@
+syntax = "proto3";
+//option java_multiple_files = false;
+//option java_package = "KeywordEnc.proto";
+//option java_outer_classname = "KeywordEnc";
+option go_package = "./keywordEnc";
+package keywordEnc;
+
+// 定义请求参数
+message Request {
+  string keyword = 1;
+}
+
+// 定义返回类型
+message Response {
+  string A  = 1;
+  string Ci = 2;
+  string B = 3;
+}
+
+// rpc服务
+service keywordEncServer {
+  rpc KeywordEnc(Request) returns(Response) {}
+}

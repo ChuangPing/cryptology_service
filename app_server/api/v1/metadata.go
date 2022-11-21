@@ -4,6 +4,7 @@ import (
 	gRPCClient "education/app_server/gRPC/client"
 	"education/app_server/model"
 	"education/app_server/service"
+	"education/app_server/tool"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -58,7 +59,7 @@ func MetadataAndCm(ctx *gin.Context) {
 		return
 	}
 
-	// check user authority
+	// check user authority (role)
 	userByte := response.Payload
 	fmt.Printf("userByte:%+v\n", userByte)
 	//unmarshal
@@ -77,20 +78,34 @@ func MetadataAndCm(ctx *gin.Context) {
 		// user not authority to store data to blockchain
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"code": http.StatusInternalServerError,
-			"msg":  "用户未注册",
+			"msg":  "您不是DO用户，没有权限！",
 		})
 		return
 	}
 
+	// use email and endc filename find symmetricKey
+	db := model.NewGorm()
+	var cryptInfo model.CryptInfo
+	result := db.Where("email=? AND aes_enc_file_name LIKE ?", dataInfo.Email, "%"+dataInfo.AesEncFileName+"%").Find(&cryptInfo)
+	if result.Error != nil {
+		fmt.Println("获取加密文件信息失败", result.Error)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code": http.StatusInternalServerError,
+			"msg":  "获取加密文件信息失败",
+		})
+		return
+	}
+	//logrus.Info("find crypto info:", cryptInfo)
+	//return
 	// store data to blockchain
 
 	// 1.encryption SymmetricKey
-	C1, C2, C3, C4, C5, err := gRPCClient.SymmetricKeyEnc("asdfghjklkjhgfds")
+	C1, C2, C3, C4, C5, err := gRPCClient.SymmetricKeyEnc(cryptInfo.SymmetricKey)
 	if err != nil {
 		logrus.Error("gRPCClient:SymmetricKeyEnc failed,err", err)
 		return
 	}
-	response, err = model.StoreSymmetricKeyEnc(dataInfo.Email, C1, C2, C3, C4, C5, *service.Server)
+	response, err = model.StoreSymmetricKeyEnc(cryptInfo.Email, C1, C2, C3, C4, C5, *service.Server)
 	if err != nil {
 		logrus.Error("StoreSymmetricKeyEnc failed, err:", err)
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -108,15 +123,36 @@ func MetadataAndCm(ctx *gin.Context) {
 		})
 		return
 	}
+
+	// 2.encryption keywords
+	A, B, Ci, err := gRPCClient.KeywordEnc(cryptInfo.KeyWords)
+	if err != nil {
+		logrus.Error("gRPC Client failed,err:", err)
+		return
+	}
+	keywordIndexByte := tool.Int64ToBytes(cryptInfo.KeywordIndex)
+	// 3.send Metadata info to blockchain
+	response, err = model.SetMetadata(cryptInfo.Email, A, B, Ci, cryptInfo.KeyWords, keywordIndexByte, *service.Server)
+	if err != nil {
+		logrus.Error("SetMetadata failed,err:", err)
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"code": http.StatusInternalServerError,
+			"msg":  "设置metadata错误",
+		})
+		return
+	}
+	// check chaincode is err
+	if response.ChaincodeStatus != 200 {
+		// email is used
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"code": http.StatusInternalServerError,
+			"msg":  "设置metadata错误",
+		})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"code": http.StatusOK,
-		"msg":  "对称密钥加密成功",
+		"msg":  "恭喜！您的数据已成功上链，数据共享成功",
 	})
-	return
-	// 2.encryption keywords TODO
-
-	// 3.set Metadata TODO
-
-	// 4.store blockchain TODO
-
 }

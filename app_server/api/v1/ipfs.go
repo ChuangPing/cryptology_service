@@ -13,7 +13,7 @@ func GetFileInfo(ctx *gin.Context) {
 	fileName := ctx.Query("fileName")
 	db := model.NewGorm()
 	var cryptInfo model.CryptInfo
-	result := db.Where("username=? AND file_name LIKE ?", username, "%"+fileName+"%").Find(&cryptInfo)
+	result := db.Where("username=? AND aes_enc_file_name LIKE ?", username, "%"+fileName+"%").Find(&cryptInfo)
 	if result.Error != nil {
 		fmt.Println("获取加密文件信息失败", result.Error)
 		ctx.JSON(http.StatusInternalServerError, gin.H{

@@ -51,9 +51,10 @@ type CryptInfo struct {
 	Username       string    // 加密文件上传用户
 	CreateDate     time.Time // 创建时间
 	KeyWords       string    // 数据关键字
-	IsShare        bool      // 是否分享
-	AesEncFileName string    // aes 加密文件名
-	SymmetricKey   string    `form:"symmetricKey" json:"symmetricKey"` // 对称密钥
+	KeywordIndex   int64
+	IsShare        bool   // 是否分享
+	AesEncFileName string // aes 加密文件名
+	SymmetricKey   string `form:"symmetricKey" json:"symmetricKey"` // 对称密钥
 	gorm.Model
 }
 
@@ -65,11 +66,19 @@ type DataInfo struct {
 	Email    string `form:"email" json:"email"`
 }
 
+// KeywordEnc info
+type KeywordEnc struct {
+	A  string `form:"a" json:"a"`
+	B  string `form:"b" json:"b"`
+	Ci string `form:"ci" json:"ci"`
+}
+
 // Metadata info
 type Metadata struct {
-	Index             int  `form:"index" json:"index"`
-	Authority         byte `form:"authority" json:"authority"`
-	KeywordCiphertext byte `form:"KeywordCiphertext" json:"keywordCiphertext"`
+	Index         int  `form:"index" json:"index"`
+	AuthorityHash byte `form:"authorityHash" json:"authorityHash"`
+	KeywordEnc    byte `form:"keyword" json:"keywordEnc"`
+	//KeywordCiphertext byte `form:"KeywordCiphertext" json:"keywordCiphertext"`
 }
 
 func NewGorm() *gorm.DB {

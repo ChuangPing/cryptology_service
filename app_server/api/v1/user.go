@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-func RegisterHandler(ctx *gin.Context) {
+func RegisterHandle(ctx *gin.Context) {
 	userInfo := new(model.RegisterUser)
 	err := ctx.ShouldBind(userInfo)
 	if err != nil {

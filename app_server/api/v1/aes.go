@@ -61,16 +61,16 @@ func AesHandler(ctx *gin.Context) {
 	}
 
 	// check symmetricKey
-	if len(aesFormData.SymmetricKey) != 16 || len(aesFormData.SymmetricKey) != 24 || len(aesFormData.SymmetricKey) != 32 {
-		logrus.Warnf("symmetricKey invalid,err:%s", aesFormData.SymmetricKey)
-		ctx.JSON(http.StatusOK, gin.H{
-			"code": http.StatusInternalServerError,
-			"msg":  "对称密钥非法",
-		})
-		return
-	}
-
-	// 检查对称密钥
+	//if len(aesFormData.SymmetricKey) != 16 || len(aesFormData.SymmetricKey) != 24 || len(aesFormData.SymmetricKey) != 32 {
+	//	logrus.Warnf("symmetricKey invalid,err:%s,", aesFormData.SymmetricKey)
+	//	ctx.JSON(http.StatusOK, gin.H{
+	//		"code": http.StatusInternalServerError,
+	//		"msg":  "对称密钥非法",
+	//	})
+	//	return
+	//}
+	//fmt.Printf("len symmetricKey:%d\n", len(aesFormData.SymmetricKey))
+	// 检查对称密钥  TODO yu shang mian hebi
 	if strings.TrimSpace(aesFormData.SymmetricKey) == "" {
 		//	向前端提示错误
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -96,7 +96,7 @@ func AesHandler(ctx *gin.Context) {
 	timeStr := strconv.FormatInt(timeInt, 10)
 	// 为了防止上传同一文件导致覆盖，给文件名加上时间戳   E:/LearningCode/Gin_project/Gin_demo/upload/ 斜杠结束表示存储的路径-那个文件夹
 	dist := "/root/go/src/education/app_server/upload/" + timeStr + file.Filename
-	fmt.Printf("file:%+v\n", file)
+	//fmt.Printf("file:%+v\n", file)
 	err = ctx.SaveUploadedFile(file, dist)
 	if err != nil {
 		fmt.Println("文件上传失败", err)
@@ -108,8 +108,9 @@ func AesHandler(ctx *gin.Context) {
 		return
 	}
 
+	encFileName := timeStr + file.Filename
 	//初始化aes加密工具函数
-	aes := tool.NewAes(aesFormData.SymmetricKey, timeStr+file.Filename)
+	aes := tool.NewAes(aesFormData.SymmetricKey, encFileName)
 	//调用aes将文件进行加密
 	err = aes.EncryptFile()
 	// 测试解密
@@ -124,6 +125,27 @@ func AesHandler(ctx *gin.Context) {
 		return
 	}
 
+	// set keyword  from blockchain and get return index
+	response, err = model.SetKeywordIndex(aesFormData.Email, aesFormData.KeyWords, encFileName, *service.Server)
+	if err != nil {
+		logrus.Error("mode.SetKeywordIndex failed,err:", err)
+		//	向前端提示错误
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code": http.StatusInternalServerError,
+			"msg":  "关键字索引设置失败",
+		})
+		return
+	}
+	if response.ChaincodeStatus != 200 {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code": http.StatusInternalServerError,
+			"msg":  "chaincode err",
+		})
+		return
+	}
+	keywordIndexByte := response.Payload
+	keywordIndex := tool.BytesToInt64(keywordIndexByte)
+	fmt.Printf("return keyword index:%v\n", keywordIndex)
 	//创建用户加密信息表
 	db := model.NewGorm()
 	// 创建用户上传文件加密信息表
@@ -146,6 +168,7 @@ func AesHandler(ctx *gin.Context) {
 		//加密文件上传时间
 		CreateDate:     time.Now(),
 		KeyWords:       aesFormData.KeyWords,
+		KeywordIndex:   keywordIndex,
 		IsShare:        aesFormData.IsShare,
 		AesEncFileName: "encryptFile_" + timeStr + file.Filename, // 用户上传文件名为 当前时间戳加文件名
 		SymmetricKey:   aesFormData.SymmetricKey,

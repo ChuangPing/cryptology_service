@@ -11,7 +11,7 @@ import (
 func StoreSymmetricKeyEnc(email, C1, C2, C3, C4, C5 string, serverInfo service.InvokeServer) (response channel.Response, err error) {
 	req := channel.Request{
 		ChaincodeID: serverInfo.ChaincodeID,
-		Fcn:         "storeSymmetricKey",
+		Fcn:         "storeSymmetricKeyEnc",
 		Args: [][]byte{
 			[]byte(email),
 			[]byte(C1),

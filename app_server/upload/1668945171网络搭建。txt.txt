@@ -1,0 +1,29 @@
+1. 复制配置模板文件：cryptogen showtemplate > crypto-config.yaml  -- 根据路径修改
+
+2.生成组织信息：cryptogen generate --config=crypto-config.yaml
+
+3.gedit configtx.yaml  修改配置文件（证书文件修改为第二步生成的证书路径）
+
+4. 
+TwoOrgsApplicationGenesis
+生成创世区块,注意生成创世区块的channelID要与后面的不同：configtxgen -profile TwoOrgsOrdererGenesis -outputBlock ./channel-artifacts/genesis.block -channelID fabric-channel
+生成通道文件：			configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel-artifacts/channel.tx -channelID mychannel
+生成组织1的锚节点文件：		configtxgen -profile TwoOrgsChannel -outputAnchorPeersUpdate ./channel-artifacts/Org1MSPanchors.tx -channelID mychannel -asOrg Org1MSP
+生成组织2的锚节点文件:  		configtxgen -profile TwoOrgsChannel -outputAnchorPeersUpdate ./channel-artifacts/Org2MSPanchors.tx -channelID mychannel -asOrg  Org2MSP
+
+
+
+configtxgen -profile TwoOrgsApplicationGenesis -outputBlock ./channel-artifacts/genesis.block -channelID fabric-channel
+
+
+
+使用docker-compose 停掉网络：docker-coompose down
+删除挂在的数据卷：docker volume prune
+
+
+mysql数据库：
+docker run -id -p 3306:3306 --name=mysql -v $PWD/conf:/etc/mysql/conf.d -v $PWD/logs:/logs -v $PWD/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root mysql
+进入mysql：docker exec -it mysql /bin/bash
+登录mysql：mysql -uroot -proot
+查看mysql数据：show databases;
+创建数据库：create database cryptology;
